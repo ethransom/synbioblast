@@ -21,7 +21,7 @@ repo. These programs run queries and build custom databases, respectively.)
 
 * **Downloaded the sample BLAST database “16SMicrobial”** to run sample queries on. This 
 database stores the 16S ribosomal RNA sequence for a large number of Bacteria and 
-Archaea. (This sequence rarely evolves due to its importance and is often used for 
+Archaea. (This sequence rarely evolves due to its importance in cell metabolism and is often used for 
 determining prokaryote phylogenies as a result.) [View the database.](https://github.com/schnauzer/synbioblast/tree/master/16SMicrobial)
 
  * **Wrote a simple web server that displays a form** for users to construct their queries. 
@@ -30,6 +30,6 @@ and displays the results to the user. [View the webserver.](https://github.com/s
 
 ## Next Steps
 
-Write some sort of long-running process that queries the Virtuoso database to generate a stream of sequences to be fed into the `makeblastdb` tool. 
+ * Write some sort of long-running process that queries the Virtuoso database to generate a stream of sequences to be fed into the `makeblastdb` tool. 
 
-Deploy the code.
+ * Deploy the code.
