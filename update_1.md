@@ -6,6 +6,11 @@ Sunday November 5th, 2017
 
 [View Project GitHub](https://github.com/schnauzer/synbioblast)
 
+Screenshot: 
+
+![screenshot](https://github.com/schnauzer/synbioblast/raw/master/screenshot_2017-11-05.png "Screenshot as of November 5th, 2017")
+
+
 ## Progress
 
 * **Attempted to build BLAST from source**, but I ran into a compilation error (this 
