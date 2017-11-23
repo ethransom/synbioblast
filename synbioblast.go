@@ -9,6 +9,13 @@ import (
 	"os/exec"
 )
 
+// TODO: ENV or flag or flagfile these
+const (
+	blastdbDir = "blastdbs"
+	// blastdb    = "16SMicrobial"
+	blastdb = "SynBioHub"
+)
+
 // BlastResult represents the result of running a blast query
 type BlastResult struct {
 	Query   string
@@ -17,12 +24,11 @@ type BlastResult struct {
 
 // Blast runs a blast query with the given target sequence.
 func Blast(seq string) (*BlastResult, error) {
-	db := "16SMicrobial"
-	cmd := exec.Command("./blastn", "-db", db)
+	cmd := exec.Command("./blastn", "-db", blastdb)
 	path := os.ExpandEnv("PATH=$PATH:$PWD")
-	blastdb := os.ExpandEnv("BLASTDB=$PWD/16SMicrobial")
+	blastdb := os.ExpandEnv("BLASTDB=$PWD/" + blastdbDir)
 	cmd.Env = append(os.Environ(), path, blastdb)
-	log.Printf("running command with db %s", db)
+	log.Printf("running command with db %s", blastdb)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -62,7 +68,9 @@ func blastHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := Blast(seq)
 	if err != nil {
+		log.Printf("ERROR blast: %v: %s", err, result.Results)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	err = templates.ExecuteTemplate(w, "blast.html", *result)
