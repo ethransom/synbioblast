@@ -57,7 +57,7 @@ Tasks accomplished:
     and sort by uri to page through them. Periodically reset the cutoff time to check
     for new records.
 
-        ```
+        ```sparql
         PREFIX dcterms: <http://purl.org/dc/terms/>
         PREFIX sbol: <http://sbols.org/v2#>
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
