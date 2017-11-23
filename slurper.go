@@ -2,15 +2,21 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/xml"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/knakk/sparql"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 // paginated with a scollable cursor as per:
@@ -48,6 +54,16 @@ type queryParams struct {
 const (
 	synbiohubURL = "https://synbiohub.org/sparql"
 	resultLimit  = 1000
+
+	redisURL          = "localhost:6379"
+	redisDedupSetKey  = "sequenceHashSet"
+	redisSeqSetPrefix = "sequence"
+
+	fastaDir = "fastas"
+)
+
+var (
+	fasta = path.Join(os.ExpandEnv("$PWD"), fastaDir)
 )
 
 // I couldn't find a way to match an element with an attribute
@@ -89,12 +105,28 @@ type sequence struct {
 	Created  time.Time
 }
 
+func (s *sequence) Hash() string {
+	sha := sha1.New()
+	io.WriteString(sha, s.Sequence)
+	return fmt.Sprintf("%x", sha.Sum(nil))
+}
+
 func parseSparqlTime(s string) (time.Time, error) {
 	// this is way less complicated than I thought it would be
 	return time.Parse(time.RFC3339, s)
 }
 
 func main() {
+	println("connecting to redis...")
+
+	client, err := redis.Dial("tcp", redisURL)
+	if err != nil {
+		log.Fatal("couldn't dial redis")
+	}
+	defer client.Close()
+
+	println("fetching from virtuoso")
+
 	bytes := fetch(0)
 
 	println("fetched, parsing response...")
@@ -103,7 +135,7 @@ func main() {
 
 	println("fetched, processing")
 
-	process(seqs)
+	process(client, seqs)
 }
 
 func parse(bytes []byte) []sequence {
@@ -171,6 +203,28 @@ func fetch(offset int) []byte {
 	return bytes
 }
 
-func process(seqs []sequence) {
+// TODO: transactions because we're like that?
 
+func process(client *redis.Client, seqs []sequence) {
+	for _, seq := range seqs {
+		hash := seq.Hash()
+
+		filename := path.Join(fastaDir, hash+".fasta")
+
+		err := ioutil.WriteFile(filename, []byte(seq.Sequence), 0644)
+		if err != nil {
+			log.Fatal("couldn't write file "+filename+": ", err)
+		}
+
+		err = client.Cmd("SADD", redisDedupSetKey, hash).Err
+		if err != nil {
+			log.Fatal("couldn't add hash to dedup set", err)
+		}
+
+		key := redisSeqSetPrefix + ":" + hash
+		err = client.Cmd("SADD", key, seq.URI).Err
+		if err != nil {
+			log.Fatal("couldn't add uri to sequence set: ", err)
+		}
+	}
 }
