@@ -88,6 +88,9 @@ Tasks accomplished:
 
  * **Wrote the beginnings of the scraper program.** The scraper sends the sparql query to `https://synbiohub.org/sparql` (although the specific SynBioHub instance needs to be configurable) and parses the resulting XML to get a list of (URI, sequence, created) tuples. [View the scraper.](https://github.com/schnauzer/synbioblast/blob/master/slurper.go)
 
+   It was at this point I found and [fixed a minor bug](https://github.com/SynBioHub/synbiohub/pull/526) in the 
+   `/sparql` endpoint on SynBioHub.
+
  * **Realized that duplicate sequences were very common** due to the 
    many-to-many nature of SBOL components and sequences as well as a 
    few duplications due to human error. I discussed this with Zach
