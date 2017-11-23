@@ -13,7 +13,7 @@ import (
 	"github.com/knakk/sparql"
 )
 
-// paginated with a scollable curor as per:
+// paginated with a scollable cursor as per:
 // http://blog.mynarz.net/2016/06/on-generating-sparql.html
 const query = `
 # tag: fetch
