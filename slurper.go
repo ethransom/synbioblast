@@ -53,9 +53,10 @@ type queryParams struct {
 
 const (
 	synbiohubURL = "https://synbiohub.org/sparql"
-	resultLimit  = 1000
+	resultLimit  = 100
 
 	redisURL          = "localhost:6379"
+	redisOffsetKey    = "sequenceoffset"
 	redisDedupSetKey  = "sequenceHashSet"
 	redisSeqSetPrefix = "sequence"
 
@@ -117,7 +118,7 @@ func parseSparqlTime(s string) (time.Time, error) {
 }
 
 func main() {
-	println("connecting to redis...")
+	log.Println("connecting to redis...")
 
 	client, err := redis.Dial("tcp", redisURL)
 	if err != nil {
@@ -125,17 +126,51 @@ func main() {
 	}
 	defer client.Close()
 
-	println("fetching from virtuoso")
+	offset, err := client.Cmd("GET", redisOffsetKey).Int64()
+	// this block definitely isn't horrible /s
+	if err != nil {
+		if err == redis.ErrRespNil {
+			err = client.Cmd("SET", redisOffsetKey, 0).Err
+			if err != nil {
+				log.Fatal("couldn't get offset value")
+			}
+			log.Println("no offset val, setting it to 0")
+			offset = 0
+		} else {
+			log.Fatal("couldn't set initial offset val: ", err)
+		}
+	} else {
+		log.Printf("starting at offset %d", offset)
+	}
 
-	bytes := fetch(0)
+	for {
+		log.Println("fetching from virtuoso")
 
-	println("fetched, parsing response...")
+		bytes := fetch(0)
 
-	seqs := parse(bytes)
+		log.Println("fetched, parsing response...")
 
-	println("fetched, processing")
+		seqs := parse(bytes)
 
-	process(client, seqs)
+		log.Println("fetched, processing")
+
+		process(client, seqs)
+
+		log.Printf("incrementing offset val by %d", len(seqs))
+
+		offset, err = client.Cmd("INCRBY", redisOffsetKey, len(seqs)).Int64()
+		if err != nil {
+			log.Fatal("couldn't update offset with new records: ", err)
+		}
+
+		if len(seqs) < resultLimit {
+			log.Println("got less sequences than limit, sleeping")
+		} else {
+			log.Println("going again")
+		}
+
+		time.Sleep(time.Hour * 1)
+	}
 }
 
 func parse(bytes []byte) []sequence {
@@ -150,7 +185,10 @@ func parse(bytes []byte) []sequence {
 	sequences := make([]sequence, len(result.Results))
 	for i, result := range result.Results {
 		sequences[i].URI = result.getValue("uri")
-		sequences[i].Sequence = result.getValue("elements")
+
+		nucl := result.getValue("elements")
+		sequences[i].Sequence = strings.ToLower(nucl)
+
 		t, err := parseSparqlTime(result.getValue("created"))
 		if err != nil {
 			log.Fatal("couldn't parse time: ", result.getValue("created"))
