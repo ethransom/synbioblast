@@ -251,7 +251,9 @@ func process(client *redis.Client, seqs []sequence) {
 
 		filename := path.Join(*fastaDir, hash+".fasta")
 
-		err := ioutil.WriteFile(filename, []byte(seq.Sequence), 0644)
+		file := []byte(fmt.Sprintf(">%s\n%s", hash, seq.Sequence))
+
+		err := ioutil.WriteFile(filename, file, 0644)
 		if err != nil {
 			log.Fatal("couldn't write file "+filename+": ", err)
 		}
