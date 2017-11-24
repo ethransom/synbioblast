@@ -126,7 +126,7 @@ func main() {
 	}
 	defer client.Close()
 
-	offset, err := client.Cmd("GET", *redisOffsetKey).Int64()
+	offset, err := client.Cmd("GET", *redisOffsetKey).Int()
 	// this block definitely isn't horrible /s
 	if err != nil {
 		if err == redis.ErrRespNil {
@@ -146,7 +146,7 @@ func main() {
 	for {
 		log.Println("fetching from virtuoso")
 
-		bytes := fetch(0)
+		bytes := fetch(offset)
 
 		log.Println("fetched, parsing response...")
 
@@ -158,7 +158,7 @@ func main() {
 
 		log.Printf("incrementing offset val by %d", len(seqs))
 
-		offset, err = client.Cmd("INCRBY", *redisOffsetKey, len(seqs)).Int64()
+		offset, err = client.Cmd("INCRBY", *redisOffsetKey, len(seqs)).Int()
 		if err != nil {
 			log.Fatal("couldn't update offset with new records: ", err)
 		}
