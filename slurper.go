@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/knakk/sparql"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/spacemonkeygo/flagfile"
 )
 
 // paginated with a scollable cursor as per:
@@ -24,22 +25,22 @@ import (
 const query = `
 # tag: fetch
 PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX sbol: <http://sbols.org/v2#> 
+PREFIX sbol: <http://sbols.org/v2#>
 
 SELECT
-	?uri 
+	?uri
 	?elements
-	?created 
-WHERE { 
+	?created
+WHERE {
 	{
-		SELECT 
-			?uri 
+		SELECT
+			?uri
 			?elements
-			?created 
-		WHERE { 
-			?uri a sbol:ComponentDefinition . 
-			?uri sbol:sequence ?sequenceUri . 
-			?sequenceUri sbol:elements ?elements . 
+			?created
+		WHERE {
+			?uri a sbol:ComponentDefinition .
+			?uri sbol:sequence ?sequenceUri .
+			?sequenceUri sbol:elements ?elements .
 			?uri dcterms:created ?created .
 		} ORDER BY ASC(str(?created))
 	}
@@ -51,20 +52,17 @@ type queryParams struct {
 	Limit, Offset int
 }
 
-const (
-	synbiohubURL = "https://synbiohub.org/sparql"
-	resultLimit  = 100
-
-	redisURL          = "localhost:6379"
-	redisOffsetKey    = "sequenceoffset"
-	redisDedupSetKey  = "sequenceHashSet"
-	redisSeqSetPrefix = "sequence"
-
-	fastaDir = "fastas"
-)
-
 var (
-	fasta = path.Join(os.ExpandEnv("$PWD"), fastaDir)
+	synbiohubURL = flag.String("synbiohub.url", "https://synbiohub.org/sparql", "URL to send sparql queries to")
+	resultLimit  = flag.Int("synbiohub.resultLimit", 100, "number of components to fetch in each query")
+
+	redisURL          = flag.String("redis.url", "localhost:6379", "URL of redis instance storing dedup state")
+	redisOffsetKey    = flag.String("redis.sequenceoffset", "sequenceoffset", "Redis key for max offset fetched from synbiohub")
+	redisDedupSetKey  = flag.String("redis.sequenceHashSet", "sequenceHashSet", "Redis key for set storing all seen sequence hashes")
+	redisSeqSetPrefix = flag.String("redis.sequencePrefix", "sequence",
+		"Redis key prefix, appended with hash of sequence to store set of matching components")
+
+	fastaDir = flag.String("fastas.path", "/var/synbioblast/fastas", "path to store fasta files in")
 )
 
 // I couldn't find a way to match an element with an attribute
@@ -118,26 +116,28 @@ func parseSparqlTime(s string) (time.Time, error) {
 }
 
 func main() {
+	flagfile.Load()
+
 	log.Println("connecting to redis...")
 
-	client, err := redis.Dial("tcp", redisURL)
+	client, err := redis.Dial("tcp", *redisURL)
 	if err != nil {
 		log.Fatal("couldn't dial redis")
 	}
 	defer client.Close()
 
-	offset, err := client.Cmd("GET", redisOffsetKey).Int64()
+	offset, err := client.Cmd("GET", *redisOffsetKey).Int64()
 	// this block definitely isn't horrible /s
 	if err != nil {
 		if err == redis.ErrRespNil {
-			err = client.Cmd("SET", redisOffsetKey, 0).Err
+			err = client.Cmd("SET", *redisOffsetKey, 0).Err
 			if err != nil {
-				log.Fatal("couldn't get offset value")
+				log.Fatal("couldn't set initial offset value")
 			}
 			log.Println("no offset val, setting it to 0")
 			offset = 0
 		} else {
-			log.Fatal("couldn't set initial offset val: ", err)
+			log.Fatal("couldn't get offset val: ", err)
 		}
 	} else {
 		log.Printf("starting at offset %d", offset)
@@ -158,18 +158,20 @@ func main() {
 
 		log.Printf("incrementing offset val by %d", len(seqs))
 
-		offset, err = client.Cmd("INCRBY", redisOffsetKey, len(seqs)).Int64()
+		offset, err = client.Cmd("INCRBY", *redisOffsetKey, len(seqs)).Int64()
 		if err != nil {
 			log.Fatal("couldn't update offset with new records: ", err)
 		}
 
-		if len(seqs) < resultLimit {
+		if len(seqs) < *resultLimit {
 			log.Println("got less sequences than limit, sleeping")
-		} else {
-			log.Println("going again")
-		}
 
-		time.Sleep(time.Hour * 1)
+			time.Sleep(time.Hour * 4)
+		} else {
+			log.Println("going again, but first sleeping for a bit...")
+
+			time.Sleep(time.Second * 2)
+		}
 	}
 }
 
@@ -201,7 +203,7 @@ func parse(bytes []byte) []sequence {
 
 func fetch(offset int) []byte {
 	config := &queryParams{
-		Limit:  resultLimit,
+		Limit:  *resultLimit,
 		Offset: offset,
 	}
 
@@ -219,7 +221,7 @@ func fetch(offset int) []byte {
 
 	body := strings.NewReader(vals.Encode())
 
-	req, err := http.NewRequest("POST", synbiohubURL, body)
+	req, err := http.NewRequest("POST", *synbiohubURL, body)
 	if err != nil {
 		log.Fatal("couldn't prepare request: ", err)
 	}
@@ -247,19 +249,19 @@ func process(client *redis.Client, seqs []sequence) {
 	for _, seq := range seqs {
 		hash := seq.Hash()
 
-		filename := path.Join(fastaDir, hash+".fasta")
+		filename := path.Join(*fastaDir, hash+".fasta")
 
 		err := ioutil.WriteFile(filename, []byte(seq.Sequence), 0644)
 		if err != nil {
 			log.Fatal("couldn't write file "+filename+": ", err)
 		}
 
-		err = client.Cmd("SADD", redisDedupSetKey, hash).Err
+		err = client.Cmd("SADD", *redisDedupSetKey, hash).Err
 		if err != nil {
 			log.Fatal("couldn't add hash to dedup set", err)
 		}
 
-		key := redisSeqSetPrefix + ":" + hash
+		key := *redisSeqSetPrefix + ":" + hash
 		err = client.Cmd("SADD", key, seq.URI).Err
 		if err != nil {
 			log.Fatal("couldn't add uri to sequence set: ", err)
