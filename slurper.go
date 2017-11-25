@@ -52,6 +52,7 @@ type queryParams struct {
 	Limit, Offset int
 }
 
+// TODO: deduplicate these
 var (
 	synbiohubURL = flag.String("synbiohub.url", "https://synbiohub.org/sparql", "URL to send sparql queries to")
 	resultLimit  = flag.Int("synbiohub.resultLimit", 100, "number of components to fetch in each query")

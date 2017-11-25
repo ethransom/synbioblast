@@ -1,0 +1,5 @@
+[fastas]
+path=fastas/
+
+[blastdb]
+path=$PWD/blastdbs

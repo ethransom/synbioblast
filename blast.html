@@ -8,11 +8,47 @@
         <a href="/">Perform another query</a>
 
         <h3>Query:</h3>
-
         <pre>{{.Query}}</pre>
 
-        <h3>Results:</h3>
+        {{if .Error}}
 
-        <pre>{{.Results}}</pre>
+        <h3>There was a server error in processing your request:</h3>
+        <pre>{{.Error}}</pre>
+
+        {{else}}
+
+        <h3>Results:</h3>
+        <table>
+            <tr>
+                <th>E-Value</th>
+                <th>Components</th>
+                <th>% Match</th>
+                <th>Alignment Length</th>
+            </tr>
+            {{range .Results}}
+            <tr>
+                <td>{{.Evalue}}</td>
+                <td>
+                    <ul>
+                    {{range .URIs}}
+                        <li><a href="{{.}}">
+                            {{.}}
+                        </a></li>
+                    {{else}}
+                        <li style="color: red">
+                            There was an error fetching the URIs for this sequence
+                        </li>
+                    {{end}}
+                </td>
+                <td>{{.Pident}}</td>
+                <td>{{.Length}}</td>
+            </tr>
+            {{else}}
+            <tr style="color: red">There were no results</p>
+            {{end}}
+            <tr style="color: red">There were no results</p>
+        </table>
+
+        {{end}}
     </body>
 </html>
