@@ -11,4 +11,4 @@ echo "Using db name of $DBNAME"
 
 TITLE="$DBNAME (generated $(date))"
 
-awk 'FNR==1{print ""}1' $SYNBIOBLASTDIR/fastas/*.fasta  | ./makeblastdb -dbtype nucl -title "$TITLE" -out "$BLASTDB/$DBNAME" -in -
+find "$SYNBIOBLASTDIR/fastas" -mindepth 1 -name '*.fasta' -type f -exec cat {} \; | ./makeblastdb -dbtype nucl -title "$TITLE" -out "$BLASTDB/$DBNAME" -in -
