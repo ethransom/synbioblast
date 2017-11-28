@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/spacemonkeygo/flagfile"
@@ -26,6 +27,8 @@ var (
 		"Redis key prefix, appended with hash of sequence to store set of matching components")
 
 	fastaDir = flag.String("fastas.path", "/var/synbioblast/fastas", "path to store fasta files in")
+
+	port = flag.Int("port", 9090, "default port to bind http server to")
 )
 
 // BlastResults represents the result of running a blast query
@@ -40,8 +43,10 @@ type BlastResults struct {
 
 	DBNum int `xml:"BlastOutput_iterations>Iteration>Iteration_stat>Statistics>Statistics_db-num"`
 
-	Query string
-	Error string
+	Query      string
+	Error      string
+	Duration   time.Duration
+	NumResults int
 }
 
 type blastResult struct {
@@ -91,6 +96,8 @@ func parseResults(b []byte) (*BlastResults, error) {
 
 // Blast runs a blast query with the given target sequence.
 func Blast(seq string) (*BlastResults, error) {
+	start := time.Now()
+
 	cmd := exec.Command("./blastn", "-db", *blastdbName, "-outfmt", "5")
 	path := os.ExpandEnv("PATH=$PATH:$PWD")
 	blastdb := "BLASTDB=" + os.ExpandEnv(*blastdbDir)
@@ -125,9 +132,9 @@ func Blast(seq string) (*BlastResults, error) {
 		return nil, err
 	}
 
-	fmt.Printf("URIs: %+v\n", results.Results[0].URIs)
-
 	results.Query = seq
+	results.Duration = time.Since(start)
+	results.NumResults = len(results.Results)
 
 	return results, nil
 }
@@ -173,5 +180,8 @@ func main() {
 
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/blast/", blastHandler)
-	http.ListenAndServe(":9090", nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
