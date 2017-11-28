@@ -21,13 +21,19 @@
         <table>
             <tr>
                 <th>E-Value</th>
+                <th>BitScore</th>
+                <th>Score</th>
+
                 <th>Components</th>
-                <th>% Match</th>
-                <th>Alignment Length</th>
+
+                <th>Alignment</th>
             </tr>
             {{range .Results}}
             <tr>
-                <td>{{.Evalue}}</td>
+                <td>{{.EValue}}</td>
+                <td>{{.BitScore}}</td>
+                <td>{{.Score}}</td>
+
                 <td>
                     <ul>
                     {{range .URIs}}
@@ -40,13 +46,18 @@
                         </li>
                     {{end}}
                 </td>
-                <td>{{.Pident}}</td>
-                <td>{{.Length}}</td>
+
+                <td>
+                    <pre>
+                        {{.QuerySeq}}
+                        {{.Midline}}
+                        {{.HitSeq}}
+                    </pre>
+                </td>
             </tr>
             {{else}}
-            <tr style="color: red">There were no results</p>
+            <tr style="color: red">There were no results</tr>
             {{end}}
-            <tr style="color: red">There were no results</p>
         </table>
 
         {{end}}

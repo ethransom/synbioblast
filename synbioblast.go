@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/csv"
+	"encoding/xml"
 	"flag"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -30,31 +30,37 @@ var (
 
 // BlastResults represents the result of running a blast query
 type BlastResults struct {
-	Query   string
-	Error   string
-	Results []*blastResult
+	XMLName   xml.Name `xml:"BlastOutput"`
+	Version   string   `xml:"BlastOutput_version"`
+	Reference string   `xml:"BlastOutput_reference"`
+
+	// TODO: parameters?
+
+	Results []blastResult `xml:"BlastOutput_iterations>Iteration>Iteration_hits>Hit"`
+
+	DBNum int `xml:"BlastOutput_iterations>Iteration>Iteration_stat>Statistics>Statistics_db-num"`
+
+	Query string
+	Error string
 }
 
-// http://www.metagenomics.wiki/tools/blast/blastn-output-format-6
 type blastResult struct {
-	Qseqid   string // query sequence id
-	Sseqid   string // subject sequence id
-	Pident   string // percentage of identical matches
-	Length   string // alignment length
-	Mismatch string // number of mismatches
-	Gapopen  string // number of gap openings
-	Qstart   string // start of alignment in query
-	Qend     string // end of alignment in query
-	Sstart   string // start of alignment in subject
-	Send     string // end of alignment in subject
-	Evalue   string // expect value
-	Bitscore string // bit score
+	SeqHash string `xml:"Hit_def"`
+
+	BitScore float64 `xml:"Hit_hsps>Hsp>Hsp_bit-score"`
+	Score    int     `xml:"Hit_hsps>Hsp>Hsp_score"`
+	EValue   string  `xml:"Hit_hsps>Hsp>Hsp_evalue"`
+
+	QuerySeq string `xml:"Hit_hsps>Hsp>Hsp_qseq"`
+	Midline  string `xml:"Hit_hsps>Hsp>Hsp_midline"`
+	HitSeq   string `xml:"Hit_hsps>Hsp>Hsp_hseq"`
 
 	URIs []string
 }
 
 func (r *blastResult) getURIs() error {
-	key := *redisSeqSetPrefix + ":" + r.Sseqid
+
+	key := *redisSeqSetPrefix + ":" + r.SeqHash
 
 	uris, err := redisClient.Cmd("SMEMBERS", key).List()
 	if err != nil {
@@ -66,41 +72,18 @@ func (r *blastResult) getURIs() error {
 	return nil
 }
 
-func newBlastResult(record []string) *blastResult {
-	return &blastResult{
-		Qseqid:   record[0],
-		Sseqid:   record[1],
-		Pident:   record[2],
-		Length:   record[3],
-		Mismatch: record[4],
-		Gapopen:  record[5],
-		Qstart:   record[6],
-		Qend:     record[7],
-		Sstart:   record[8],
-		Send:     record[9],
-		Evalue:   record[10],
-		Bitscore: record[11],
-	}
-}
-
-func parseResults(b []byte) ([]*blastResult, error) {
-	r := csv.NewReader(bytes.NewReader(b))
-
-	records, err := r.ReadAll()
+func parseResults(b []byte) (*BlastResults, error) {
+	results := &BlastResults{}
+	err := xml.Unmarshal(b, &results)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]*blastResult, 0, len(records))
-	for _, record := range records {
-		result := newBlastResult(record)
-
-		err := result.getURIs()
+	for i := range results.Results {
+		err = results.Results[i].getURIs()
 		if err != nil {
-			return []*blastResult{}, nil
+			return nil, err
 		}
-
-		results = append(results, result)
 	}
 
 	return results, nil
@@ -108,7 +91,7 @@ func parseResults(b []byte) ([]*blastResult, error) {
 
 // Blast runs a blast query with the given target sequence.
 func Blast(seq string) (*BlastResults, error) {
-	cmd := exec.Command("./blastn", "-db", *blastdbName, "-outfmt", "10")
+	cmd := exec.Command("./blastn", "-db", *blastdbName, "-outfmt", "5")
 	path := os.ExpandEnv("PATH=$PATH:$PWD")
 	blastdb := "BLASTDB=" + os.ExpandEnv(*blastdbDir)
 	cmd.Env = append(os.Environ(), path, blastdb)
@@ -126,6 +109,7 @@ func Blast(seq string) (*BlastResults, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		println("MARK")
 		return &BlastResults{Error: string(out), Query: seq}, err
 	}
 
@@ -141,7 +125,11 @@ func Blast(seq string) (*BlastResults, error) {
 		return nil, err
 	}
 
-	return &BlastResults{Results: results, Query: seq}, nil
+	fmt.Printf("URIs: %+v\n", results.Results[0].URIs)
+
+	results.Query = seq
+
+	return results, nil
 }
 
 // https://golang.org/doc/articles/wiki/
@@ -160,7 +148,7 @@ func blastHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := Blast(seq)
 	if err != nil {
-		log.Printf("ERROR blast: %v: %s", err, result.Results)
+		log.Printf("ERROR blast: %v: %+v", err, result)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
