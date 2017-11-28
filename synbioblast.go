@@ -63,16 +63,25 @@ type blastResult struct {
 	URIs []string
 }
 
-func (r *blastResult) getURIs() error {
+func (r *BlastResults) getURIs() error {
+	start := time.Now()
 
-	key := *redisSeqSetPrefix + ":" + r.SeqHash
+	for _, result := range r.Results {
+		key := *redisSeqSetPrefix + ":" + result.SeqHash
 
-	uris, err := redisClient.Cmd("SMEMBERS", key).List()
-	if err != nil {
-		return err
+		redisClient.PipeAppend("SMEMBERS", key)
 	}
 
-	r.URIs = uris
+	for i := range r.Results {
+		uris, err := redisClient.PipeResp().List()
+		if err != nil {
+			return err
+		}
+
+		r.Results[i].URIs = uris
+	}
+
+	fmt.Printf("Redis fetch for query finished in %v", time.Since(start))
 
 	return nil
 }
@@ -84,11 +93,9 @@ func parseResults(b []byte) (*BlastResults, error) {
 		return nil, err
 	}
 
-	for i := range results.Results {
-		err = results.Results[i].getURIs()
-		if err != nil {
-			return nil, err
-		}
+	err = results.getURIs()
+	if err != nil {
+		return nil, err
 	}
 
 	return results, nil
