@@ -1,0 +1,59 @@
+<sparql xmlns="http://www.w3.org/2005/sparql-results#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2001/sw/DataAccess/rf1/result2.xsd">
+ <head>
+  <variable name="uri"/>
+  <variable name="elements"/>
+  <variable name="created"/>
+ </head>
+ <results distinct="false" ordered="true">
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/ACS_SynBio/seq_g92C17DN/1</uri></binding>
+   <binding name="elements"><literal>AGCGCGGGTGAGAGGgattcgttaccaatagacaATTgATTGGACGTTCAATATAAtgctagcCTGAagGGTGTCTCAAGGTGCGTACCTTGACTGATGAGTCCGAAAGGACGAAACACCcctctacaaataattttgtttaaAATGTTCCCTAATAATCAGCAAAGAGGTTACTAGATGGCAGGCGCAGTTGGTCGTCCGCGTCGTAGTGCACCGCGTCGTGCAGGTAAAAATCCGCGTGAAGAAATTCTGGATGCAAGCGCAGAACTGTTTACCCGTCAGGGTTTTGCAACCACCAGTACCCATCAGATTGCAGATGCAGTTGGTATTCGTCAGGCAAGCCTGTATTATCATTTTCCGAGCAAAACCGAAATCTTTCTGACCCTGCTGAAAAGCACCGTTGAACCGAGCACCGTTCTGGCAGAAGATCTGAGCACCCTGGATGCAGGTCCGGAAATGCGTCTGTGGGCAATTGTTGCAAGCGAAGTTCGTCTGCTGCTGAGCACCAAATGGAATGTTGGTCGTCTGTATCAGCTGCCGATTGTTGGTAGCGAAGAATTTGCAGAATATCATAGCCAGCGTGAAGCACTGACCAATGTTTTTCGTGATCTGGCAACCGAAATTGTTGGTGATGATCCGCGTGCAGAACTGCCGTTTCATATTACCATGAGCGTTATTGAAATGCGTCGCAATGATGGTAAAATTCCGAGTCCGCTGAGCGCAGATAGCCTGCCGGAAACCGCAATTATGCTGGCAGATGCAAGCCTGGCAGTTCTGGGTGCACCGCTGCCTGCAGATCGTGTTGAAAAAACCCTGGAACTGATTAAACAGGCAGATGCAAAATAATAACTCGGTACCAAAGACGAACAATAAGACGCTGAAAAGCGTCTTTTTTCGTTTTGGTCC</literal></binding>
+   <binding name="created"><literal>2017-06-21T07:02:45.348Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/ACS_SynBio/ACS_000631/1</uri></binding>
+   <binding name="elements"><literal>AGCGCGGGTGAGAGGgattcgttaccaatagacaATTgATTGGACGTTCAATATAAtgctagcCTGAagGGTGTCTCAAGGTGCGTACCTTGACTGATGAGTCCGAAAGGACGAAACACCcctctacaaataattttgtttaaAATGTTCCCTAATAATCAGCAAAGAGGTTACTAGATGGCAGGCGCAGTTGGTCGTCCGCGTCGTAGTGCACCGCGTCGTGCAGGTAAAAATCCGCGTGAAGAAATTCTGGATGCAAGCGCAGAACTGTTTACCCGTCAGGGTTTTGCAACCACCAGTACCCATCAGATTGCAGATGCAGTTGGTATTCGTCAGGCAAGCCTGTATTATCATTTTCCGAGCAAAACCGAAATCTTTCTGACCCTGCTGAAAAGCACCGTTGAACCGAGCACCGTTCTGGCAGAAGATCTGAGCACCCTGGATGCAGGTCCGGAAATGCGTCTGTGGGCAATTGTTGCAAGCGAAGTTCGTCTGCTGCTGAGCACCAAATGGAATGTTGGTCGTCTGTATCAGCTGCCGATTGTTGGTAGCGAAGAATTTGCAGAATATCATAGCCAGCGTGAAGCACTGACCAATGTTTTTCGTGATCTGGCAACCGAAATTGTTGGTGATGATCCGCGTGCAGAACTGCCGTTTCATATTACCATGAGCGTTATTGAAATGCGTCGCAATGATGGTAAAATTCCGAGTCCGCTGAGCGCAGATAGCCTGCCGGAAACCGCAATTATGCTGGCAGATGCAAGCCTGGCAGTTCTGGGTGCACCGCTGCCTGCAGATCGTGTTGAAAAAACCCTGGAACTGATTAAACAGGCAGATGCAAAATAATAACTCGGTACCAAAGACGAACAATAAGACGCTGAAAAGCGTCTTTTTTCGTTTTGGTCC</literal></binding>
+   <binding name="created"><literal>2017-06-21T07:03:56.195Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_B0034/1</uri></binding>
+   <binding name="elements"><literal>aaagaggagaaa</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_B0011/1</uri></binding>
+   <binding name="elements"><literal>agagaatataaaaagccagattattaatccggcttttttattattt</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_B0012/1</uri></binding>
+   <binding name="elements"><literal>tcacactggctcaccttcgggtgggcctttctgcgtttata</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_B0032/1</uri></binding>
+   <binding name="elements"><literal>tcacacaggaaag</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_C0061/1</uri></binding>
+   <binding name="elements"><literal>atgactataatgataaaaaaatcggattttttggcaattccatcggaggagtataaaggtattctaagtcttcgttatcaagtgtttaagcaaagacttgagtgggacttagttgtagaaaataaccttgaatcagatgagtatgataactcaaatgcagaatatatttatgcttgtgatgatactgaaaatgtaagtggatgctggcgtttattacctacaacaggtgattatatgctgaaaagtgtttttcctgaattgcttggtcaacagagtgctcccaaagatcctaatatagtcgaattaagtcgttttgctgtaggtaaaaatagctcaaagataaataactctgctagtgaaattacaatgaaactatttgaagctatatataaacacgctgttagtcaaggtattacagaatatgtaacagtaacatcaacagcaatagagcgatttttaaagcgtattaaagttccttgtcatcgtattggagacaaagaaattcatgtattaggtgatactaaatcggttgtattgtctatgcctattaatgaacagtttaaaaaagcagtcttaaatgctgcaaacgacgaaaactacgctttagtagcttaataactctgatagtgctagtgtagatctc</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_R0010/1</uri></binding>
+   <binding name="elements"><literal>caatacgcaaaccgcctctccccgcgcgttggccgattcattaatgcagctggcacgacaggtttcccgactggaaagcgggcagtgagcgcaacgcaattaatgtgagttagctcactcattaggcaccccaggctttacactttatgcttccggctcgtatgttgtgtggaattgtgagcggataacaatttcacaca</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_C0051/1</uri></binding>
+   <binding name="elements"><literal>atgagcacaaaaaagaaaccattaacacaagagcagcttgaggacgcacgtcgccttaaagcaatttatgaaaaaaagaaaaatgaacttggcttatcccaggaatctgtcgcagacaagatggggatggggcagtcaggcgttggtgctttatttaatggcatcaatgcattaaatgcttataacgccgcattgcttgcaaaaattctcaaagttagcgttgaagaatttagcccttcaatcgccagagaaatctacgagatgtatgaagcggttagtatgcagccgtcacttagaagtgagtatgagtaccctgttttttctcatgttcaggcagggatgttctcacctgagcttagaacctttaccaaaggtgatgcggagagatgggtaagcacaaccaaaaaagccagtgattctgcattctggcttgaggttgaaggtaattccatgaccgcaccaacaggctccaagccaagctttcctgacggaatgttaattctcgttgaccctgagcaggctgttgagccaggtgatttctgcatagccagacttgggggtgatgagtttaccttcaagaaactgatcagggatagcggtcaggtgtttttacaaccactaaacccacagtacccaatgatcccatgcaatgagagttgttccgttgtggggaaagttatcgctagtcagtggcctgaagagacgtttggcgctgcaaacgacgaaaactacgctttagtagcttaataacgctgatagtgctagtgtagatcgc</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+  <result>
+   <binding name="uri"><uri>https://synbiohub.org/public/igem/BBa_R0051/1</uri></binding>
+   <binding name="elements"><literal>taacaccgtgcgtgttgactattttacctctggcggtgataatggttgc</literal></binding>
+   <binding name="created"><literal datatype="http://www.w3.org/2001/XMLSchema#dateTime">2003-01-31T12:00:00Z</literal></binding>
+  </result>
+ </results>
+</sparql>

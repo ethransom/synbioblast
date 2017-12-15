@@ -59,6 +59,8 @@
 
 \usepackage[T1]{fontenc}% optional T1 font encoding
 
+\usepackage{listings}
+
 
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
@@ -453,7 +455,18 @@
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-The abstract goes here.
+By adding the ability to search the SynBioHub repository by nucleotide sequence,
+rather than by title, keyword, or summary, users and administrators
+gain the ability to investigate the uses of particular sequences
+and see where uploaders utilized already existing components, without the need
+for uploaders to have designed their SBOL correctly. Scraping SynBioHub to create a 
+list of unique sequences can be done with a paginated SPARQL query. The source code
+and executables for NCBI's BLAST are freely available, which allows us to build a 
+BLAST database using these sequences. Finally, we can implement a user interface
+that allows users to submit queries to BLAST against this database and view the 
+results of these queries. A prototype has shown that this approach does not pose
+availability constraints on SynBioHub's backing database, or is unfeasible to run 
+on a single host machine.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
@@ -494,16 +507,33 @@ The abstract goes here.
 % 
 % Here we have the typical use of a "T" for an initial drop letter
 % and "HIS" in caps to complete the first word.
-\IEEEPARstart{T}{his} demo file is intended to serve as a ``starter file''
-for IEEE Communications Society journal papers produced under \LaTeX\ using
-IEEEtran.cls version 1.8b and later.
+%\IEEEPARstart{T}{his} demo file is intended to serve as a ``starter file''
+%for IEEE Communications Society journal papers produced under \LaTeX\ using
+%IEEEtran.cls version 1.8b and later.
 % You must have at least 2 lines in the paragraph with the drop letter
 % (should never be an issue)
-I wish you the best of success.
+%I wish you the best of success.
 
-\hfill mds
+%\hfill mds
  
-\hfill August 26, 2015
+%\hfill August 26, 2015
+
+SynBioHub uses the Virtuoso graph database to store application state, namely,
+uploaded sequences. While Virtuoso provides operations to perform simple string
+comparisons, these operations are not suitable for searching for and against large
+strings. In addition, two components claiming to encode the same structure might 
+have small differences consisting of single base pairs, or small prefixes or postfixes.
+These differences do not change the charatcter of the DNA sequence, but would cause
+the sequences to be rejected by simpler string comparision algorithms. This task requires
+the use of alignment algorithms specifically designed to operate on DNA sequences. The
+de facto standard in this space is NCBI's BLAST.
+
+The BLAST algorithm was published in 1990 as a significant improvement upon existing search
+alignment algorithms available at the time. BLAST gains its speed by sacrificing a dynamic
+programming approach for a heuristic-based one. This approach is less accurate but is up to 50
+times faster. BLAST's speed vastly improved the user experience of querying extremely large
+databases, and has been extremely successful--the original paper has been cited 50,000 times,
+making it the most cited paper of the 1990s.
 
 \subsection{Subsection Heading Here}
 Subsection text here.
@@ -611,6 +641,131 @@ Subsubsection text here.
 
 
 
+\section{Methods}
+
+The SynBioBLAST prototype is built in a layered, microservice-based 
+fashion. An alternate architecture is discussed in the Future Work section.
+
+\subsection{Scraping Virtuoso}
+
+The Virtuoso Universal Server provides a number of functions, in particular
+a graph database with a SPARQL interface. SynBioHub exposes this interface 
+at https://synbiohub.org/sparql, allowing for users to run a subset 
+of SPARQL queries. This endpoint can also be configured as an API endpoint,
+in which case it will return results in a well-known XML format. 
+
+\begin{figure}[!t]
+\centering
+\begin{lstlisting}[language=sparql]
+  PREFIX dcterms: <http://purl.org/dc/terms/>
+  PREFIX sbol: <http://sbols.org/v2#>
+  
+  SELECT
+    ?uri
+    ?elements
+    ?created
+  WHERE {
+    {
+      SELECT
+        ?uri
+        ?elements
+        ?created
+      WHERE {
+        ?uri a sbol:ComponentDefinition .
+        ?uri sbol:sequence ?sequenceUri .
+        ?sequenceUri sbol:elements ?elements .
+        ?uri dcterms:created ?created .
+      } ORDER BY ASC(str(?created))
+    }
+  }
+  LIMIT {{.Limit}} OFFSET {{.Offset}}
+\end{lstlisting}
+\caption{The SPARQL query used to fetch sequences from Virtuoso.}
+\label{fig_sim}
+\end{figure}
+
+Because of the nature of flattening a graph into a flat XML file, sequences that
+are referenced multiple times will appear multiple times in this output. Duplicates
+need to be detected and handled appropriately. As an added benefit, sequences that 
+were uploaded multiple times through user error will be deduplicated as well.
+
+\subsubsection{Deduplication}
+
+Deduplication is acheived through the use of the SHA1 hash function. Each sequence
+is hashed.
+
+\subsection{Building the BLAST database}
+
+NCBI provides a number of programs to create, manipulate, and query BLAST databases.
+One such program is \texttt{makeblastdb}, which assembles an input file of sequences
+into an indexed BLAST database. 
+
+The prototype scraper stores sequences individually, so that new sequences can be 
+scraped incrementally. The builder script uses \texttt{cat} to concatenate these files
+into the \texttt{stdin} of \texttt{makeblastdb}. The default Linux shell has a maximum
+argument length of approximately 30,000, which is possibly less than the number of FASTA
+files. This requires the use of the \texttt{find} command is used to enumerate the filenames
+of the FASTA directory and run the \texttt{cat} command for each file. Figure <x> shows 
+a command similar to the one used to build the database.
+
+\begin{figure}[!t]
+\centering
+\begin{lstlisting}
+find -name '*.fasta' -exec cat {} \; 
+  | ./makeblastdb -in -
+\end{lstlisting}
+\caption{Find is used to concatenate the FASTA files and pipe them to \texttt{makeblastdb}}
+\label{fig_sim}
+\end{figure}
+
+\subsection{Running Queries}
+
+SynBioBLAST is queried through a webpage user interface, similar to NCBI's reference
+BLAST implementation. A webserver displays a form to the user. Users input their query 
+sequence and submit the form. NCBI's \texttt{blastn} program is used to run the BLAST
+algorithm on the indexed BLAST database. The output of \texttt{blastn} is collected 
+and parsed. The query server then must perform reverse deduplication to convert SHA1
+hashes back into lists of uris. A results page is then generated for the user, featuring
+a link for each matching uri and selected hit information results as reported by the 
+BLAST algorithm.
+
+\subsubsection{Reverse Deduplication}
+
+Sequences are identified in the BLAST database by their SHA1 hash. These hashes
+are used to assemble a list of keys to retrieve the url sets associated with each
+sequence. An \texttt{SMEMBERS <key>} command is sent to Redis for each key. These
+commands are pipelined, meaning the latency of deduplication is approximately the
+round trip time to the Redis server, and is not dependent on the number of results
+returned by BLAST.
+
+\section{Results}
+
+A Google Cloud Compute Engine \texttt{f1-micro} instance was provisioned to 
+test the prototype. The instance had 8 GB of disk capacity and 592 MB of 
+memory, both of which proved to be more than sufficient.
+
+\subsection{Scraping}
+
+Scraping was initially done in smaller batches of 100 or 1000. When Virtuoso 
+handled those queries well, batch size was increased to 5000. Further experimentation
+could determine the optimal value of this parameter. 
+
+At a batch size of 5000, the scraper took roughly 3 minutes to scrape 36,607 sequences
+from Virtuoso. Of these, 33,325 were unique (3,282 duplicates), resulting in 143 MB of
+of FASTA files and 20 MB of Redis memory usage.
+
+This resource usage was much less than expected, calling many of the design 
+decisions into question and making new implementations and architectures feasible.
+See the Future Work section for discussion of these possibilities.
+
+\subsection{Building The Database}
+
+As of this writing, building the BLAST database takes 39 seconds of real time 
+and 2 seconds of user CPU time. Clearly, the bottleneck is retrieving the FASTA files from
+disk. The 37 seconds of disk seek overhead could be virtually eliminated if the slurper
+appended new sequences to a single FASTA file.
+
+\subsection{Querying}
 
 \section{Conclusion}
 The conclusion goes here.
