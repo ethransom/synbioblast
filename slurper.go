@@ -54,6 +54,10 @@ type queryParams struct {
 
 // TODO: deduplicate these
 var (
+	blastdbDir = flag.String("blastdb.path", "/var/synbioblast/blastdbs",
+		"directory where blast dbs are stored")
+	blastdbName = flag.String("blastdb.name", "SynBioHub", "name of the blast db to use")
+
 	synbiohubURL = flag.String("synbiohub.url", "https://synbiohub.org/sparql", "URL to send sparql queries to")
 	resultLimit  = flag.Int("synbiohub.resultLimit", 100, "number of components to fetch in each query")
 

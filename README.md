@@ -4,12 +4,16 @@ SynBioBLAST is a standalone website that adds support for NCBI's BLAST to SynBio
 
 ## Setup
 
+While Go is multi-platform, the included executables are compiled for Linux, so for the 
+time being Linux is the only supported platform for SynBioBLAST.
+
 1. Clone the repo
-2. Make sure you have the [`go`](https://golang.org) compiler installed.
+2. Make sure you have the [`go`](https://golang.org) compiler and Redis installed.
 3. Install the dependencies
    ```
-   $ go get github.com/foobar/barfoo
-   $ go get github.com/other/other
+   $ go get github.com/knakk/sparql
+   $ go get github.com/mediocregopher/radix.v2
+   $ go get github.com/spacemonkeygo/flagfile
    ```
 4. Build the slurper
    ```
@@ -19,25 +23,23 @@ SynBioBLAST is a standalone website that adds support for NCBI's BLAST to SynBio
    ```
    $ go build synbioblast.go
    ```
-6. If necessary, copy the binaries and `builddb.sh` to the computer you want to run SynBioBLAST from.
-7. (On the SynBioBLAST computer.) Make sure redis is installed.
-8. Run the slurper (Should only take a few minutes to complete.)
+7. Run the slurper (Should only take a few minutes to complete.)
     ```
-    $ ./slurper
+    $ ./slurper -flagfile synbioblast.flags
     ```
-9. Build the blast db
+8. Build the blast db
     ```
-    $ ./builddb.sh
+    $ SYNBIOBLASTDIR=$PWD ./builddb.sh
     ```
-10. Run the query server
+9. Run the query server
     ```
-    $ ./server
+    $ ./synbioblast -flagfile synbioblast.flags
     ```
-11. Navigate to the appropriate address and port to see synbioblast.
+10. Navigate to SynBioBLAST with your favorite browser. By default it is on port 9090.
 
 ## Overview
 
-![](https://github.com/schnauzer/synbioblast/raw/master/architecture.svg "Overview of architecture")
+![](https://github.com/schnauzer/synbioblast/raw/master/actualarchitecture.png "Overview of architecture")
 
 ### Slurper (`slurper.go`)
 
@@ -68,6 +70,10 @@ Serves HTTP. Spawns a blast child process to run queries against the BLAST datab
  * The DB Builder does not operate atomically. It should build a new database
    in a temporary location and then atomically rename it so as not to disrupt any
    incoming queries.
+
+ * The overhead of reading hundreds of thousands of small files is a huge
+   performance bottleneck in the building of the BLAST database. If the slurper
+   concatenated these files together we could cut the time needed by 10x.
 
  * Deduplication information takes up less room than originally anticipated. The 
    slurper could perform dedup in-memory and write this information out along with the fasta files, eliminating the need for a redis request to translate hashes
