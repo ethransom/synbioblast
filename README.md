@@ -8,6 +8,8 @@ SynBioBLAST is a standalone website that adds support for NCBI's BLAST to SynBio
 
 [Update 2.](https://github.com/schnauzer/synbioblast/blob/master/update_2.md)
 
+[Presentation](https://github.com/schnauzer/synbioblast/blob/master/SynBioBLAST.pdf)
+
 [Final Report.](https://github.com/schnauzer/synbioblast/blob/master/final_report.pdf)
 
 ## Setup
