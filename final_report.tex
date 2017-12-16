@@ -125,9 +125,9 @@
   % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
   % will default to the driver specified in the system graphics.cfg if no
   % driver is specified.
-  % \usepackage[dvips]{graphicx}
+  \usepackage[dvips]{graphicx}
   % declare the path(s) where your graphic files are
-  % \graphicspath{{../eps/}}
+  \graphicspath{{../final_report_images/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   % \DeclareGraphicsExtensions{.eps}
@@ -648,7 +648,7 @@ fashion. An alternate architecture is discussed in the Future Work section.
 
 \subsection{Scraping Virtuoso}
 
-The Virtuoso Universal Server provides a number of functions, in particular
+The Virtuoso Universal Server provides a number of functions, in particular,
 a graph database with a SPARQL interface. SynBioHub exposes this interface 
 at https://synbiohub.org/sparql, allowing for users to run a subset 
 of SPARQL queries. This endpoint can also be configured as an API endpoint,
@@ -767,6 +767,60 @@ appended new sequences to a single FASTA file.
 
 \subsection{Querying}
 
+Running a 720 base pair query takes 218 ms. Fetching deduplication information
+from Redis takes 13 ms, the remainder of the time is spent waiting for the BLAST
+algorithm. A 5500 base pair query takes 450 ms, with 10 ms taken communicating 
+with Redis. The time spent fetching deduplication information from Redis is 
+considered minimal compared to the time of the query.
+
+
+
+\subsection{Implementation}
+
+The scraper and query server were both written in Go. Go is a statically-typed
+complied language designed for web services and distributed systems. The current
+scraper implementation is 274 lines, while the query implementation is 194. The 
+database builder is a simple shell script, about 15 lines.
+
+
+\section{Future Work}
+
+\subsection{Improvements on the Existing Implementation}
+
+\begin{itemize}
+  \item 
+    As discussed above, modifing the scraping code to append new sequences to 
+    a large file would speed up the building of the BLAST database by 10x. 
+\end{itemize}
+
+\subsection{Alternative Architectures}
+
+Scraping Virtuoso is fast enough that it could be done from scratch each time. 
+This unlocks a number of alternative design paths.
+
+\begin{itemize}
+  \item
+    \underline{Batch-based architecture.} The deduplication data structures
+    are small enough that they could be built in-memory. (On the order of 
+    tens of kilobytes.) The dependency on Redis could be removed, which would
+    simplify deployment and system administration.
+  \item
+    \underline{ComponentDefinition-centric query.} If the deduplication of
+    reuploaded sequences is not desired, a different query could be chosen 
+    that preserves the many-to-one relationship between Sequences and 
+    ComponentDefinitions. This would eliminate the need for deduplication
+    data structures entirely.
+\end{itemize}
+
+\subsection{Rewriting in JavaScript}
+
+The main SynBioHub application is written in JavaScript. Is it possible to 
+integrate the Golang code by running the Scraper and Query Server as child
+processes, maintainence could be simplified by rewriting in JavaScript. As 
+both components are of low complexity and don't utilize any Golang-specific 
+features, the rewrite would be a fairly 
+direct translation. 
+
 \section{Conclusion}
 The conclusion goes here.
 
@@ -855,22 +909,22 @@ H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
 %\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{mshell}}]{Michael Shell}
 % or if you just want to reserve a space for a photo:
 
-\begin{IEEEbiography}{Michael Shell}
-Biography text here.
-\end{IEEEbiography}
+%\begin{IEEEbiography}{Michael Shell}
+%Biography text here.
+%\end{IEEEbiography}
 
 % if you will not have a photo at all:
-\begin{IEEEbiographynophoto}{John Doe}
-Biography text here.
-\end{IEEEbiographynophoto}
+%\begin{IEEEbiographynophoto}{John Doe}
+%Biography text here.
+%\end{IEEEbiographynophoto}
 
 % insert where needed to balance the two columns on the last page with
 % biographies
 %\newpage
 
-\begin{IEEEbiographynophoto}{Jane Doe}
-Biography text here.
-\end{IEEEbiographynophoto}
+%\begin{IEEEbiographynophoto}{Jane Doe}
+%Biography text here.
+%\end{IEEEbiographynophoto}
 
 % You can push biographies down or up by placing
 % a \vfill before or after them. The appropriate
